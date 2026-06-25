@@ -1,0 +1,43 @@
+Sense Aid
+An AI camera equipped device to worn by an user in the head. This will have bluetooth support which will be given by the device to a pair of bluetooth earphones via A2DP (NOTE: this is a full duplex communication where the audio is given by the client and MIC audio is given to the client). 
+
+This is will have 2 parts: A server (written in python) and a client (the device it self) consisting of 2 ESP32s and a bunch of other hardware specified below.
+
+SERVER:
+The server will normally be in sleep mode. Once the client is booted, it establishes a connection with the server, which is full duplex WEBSOCKETS connection.
+Here, the client will send a live video feed (given by the ESP32 CAM) along with a JSON object for the sensor readings given below (refer Client side for more details) which will be send to GEMINI Live API.
+
+SYSTEM PROMPT: "You are the "eye" of a blind person, you have been given the live video feed of a camera. You should return an sentence in single line, MUST NOT BE MORE THAN 10 words.
+Your Priorities are given below:
+
+Tier 1 — Immediate alert: Return output when there is immediate danger:  Interrupt everything. Speak NOW. ≤ 4 words. Under 200ms from detection.
+Tier 2 — Navigational context: Spoken when no Tier 1 is active. ≤ 8 words. Every 2–4 seconds if scene changes
+Tier 3 — Ambient awareness: Spoken only on user request or long pause. Scene summary. ≤ 15 words.
+
+The core principle: say only what changes, and say urgent things first.
+
+Situation Specific Templates (use these as reference, not the actual thing)
+- Static Objects: direction + distance + Action: "Wall, 2 steps right - go left", "Low obstacle ahead - step over"
+- Moving Objects: direction + motion + urgency: "Person crossing left to right", "Fast Vehicle, approaching - wait"
+- Step / Stairs: up or down, count if unknown: "Steps, 4 down", "Ramp up ahead"
+- Open Space: clearance distance + direction: "Clear ahead, 10 steps", "Open left closed right"
+
+The user will also interact with you for specific things, here, You should keep in mind the tier system above, and use the live frames to analyse the situation and then give a reply to the user.
+"
+
+The API will return raw PCM chunks of audio data of the output, which the server will forward to the client
+The server here, fully works as a middle man between the client and the GEMINI API, handling all the high processing stuff and returning an EASY (in terms of resources) to use format to the client.
+
+CLIENT
+
+Client Hardware:
+- ESP32 x2 
+- ESP32 Cam
+- HCSR04 Ultrasonic sensor x4
+- Vibration Motors x4
+- VL53L0X ToF sensor
+- L293D (for driving Motors)
+- INMP441 MIC
+
+ESP32 Cam and one of the ESP32s will be connected to the same network
+Once booted, both will send a request to open a connection with the server. Once connected, ESP32 Cam ONLY and ONLY SENDS Live Video Feed. 
